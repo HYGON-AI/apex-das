@@ -31,6 +31,7 @@ jobs:
       image: image.sourcefind.cn:5000/dcu/admin/base/dev:rockylinux8.6-mpi5.0-gcc10.3-cmake3.29-py3.10-mkl2020.4.304
       volumes:
         - /public/opendas/ArchivedFile:/ArchivedFile:ro
+        - /public5:/public5:ro
         - /opt/hyhal/:/opt/hyhal/:ro
       options: >-
         --shm-size=16g
