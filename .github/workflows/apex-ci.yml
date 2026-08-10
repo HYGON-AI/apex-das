@@ -70,7 +70,6 @@ jobs:
       - name: Install Python dependencies
         shell: bash
         run: |
-          set -euo pipefail
           source /opt/dtk/env.sh
           mkdir -p ~/.pip
           cat > ~/.pip/pip.conf << EOF
@@ -90,21 +89,18 @@ jobs:
       - name: Build wheel
         shell: bash
         run: |
-          set -euo pipefail
           bash .github/scripts/compile.sh > compile.log 2>&1
           tail -n 100 compile.log
 
       - name: Repair manylinux wheel
         shell: bash
         run: |
-          set -euo pipefail
           source /opt/dtk/env.sh
           bash .github/scripts/repair_manylinux.sh
 
       - name: Install and verify wheel
         shell: bash
         run: |
-          set -euo pipefail
           source /opt/dtk/env.sh
           pip uninstall -y apex || true
           ls dist/*manylinux*.whl
