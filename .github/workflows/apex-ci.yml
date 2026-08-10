@@ -14,7 +14,6 @@ permissions:
 env:
   PIP_INDEX_URL: "http://10.16.1.201:9929/nightly/dtk2604/+simple/"
   PIP_TRUSTED_HOST: "10.16.1.201"
-  DTK_PKG: "/ArchivedFile/dtk-pkg/dtk26.04/DTK-26.04-rc4-centos8-x86_64.tar.gz"
   DEVPI_URL: "http://10.16.1.201:9929/"
   TORCH_VERSION: "2.10.0"
   REPORTS_DIR: ${{ github.workspace }}/reports
@@ -30,7 +29,6 @@ jobs:
     container:
       image: image.sourcefind.cn:5000/dcu/admin/base/dev:rockylinux8.6-mpi5.0-gcc10.3-cmake3.29-py3.10-mkl2020.4.304
       volumes:
-        - /ArchivedFile:/ArchivedFile:ro
         - /opt/hyhal/:/opt/hyhal/:ro
       options: >-
         --shm-size=16g
@@ -47,9 +45,9 @@ jobs:
         run: |
           set -eu
 
-          cp -f "${DTK_PKG}" /opt/
           cd /opt
-          tar -xzf "$(basename "${DTK_PKG}")"
+          wget http://42.228.13.241:18000/dtk-pkg/dtk26.04/DTK-26.04-Rocky8.6-x86_64.tar.gz
+          tar -xzf DTK-26.04-Rocky8.6-x86_64.tar.gz
           mv dtk-* dtk
 
           src_dir="/ArchivedFile/ai_cc/nightly"
@@ -140,7 +138,6 @@ jobs:
     container:
       image: image.sourcefind.cn:5000/dcu/admin/base/dev:rockylinux8.6-mpi5.0-gcc10.3-cmake3.29-py3.10-mkl2020.4.304
       volumes:
-        - /ArchivedFile:/ArchivedFile:ro
         - /opt/hyhal/:/opt/hyhal/:ro
       options: >-
         --shm-size=16g
@@ -161,8 +158,9 @@ jobs:
         run: |
           set -eu
 
-          cp -f "${DTK_PKG}" /opt/
           cd /opt
+          wget http://42.228.13.241:18000/dtk-pkg/dtk26.04/DTK-26.04-Rocky8.6-x86_64.tar.gz
+          tar -xzf DTK-26.04-Rocky8.6-x86_64.tar.gz
           tar -xzf "$(basename "${DTK_PKG}")"
           mv dtk-* dtk
 
