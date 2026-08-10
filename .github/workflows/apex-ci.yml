@@ -8,8 +8,13 @@ on:
     branches:
       - ci-test
 
+concurrency:
+  group: apex-ci-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
+  checks: write
 
 env:
   PIP_INDEX_URL: "http://10.16.1.201:9929/nightly/dtk2604/+simple/"
@@ -65,7 +70,6 @@ jobs:
       - name: Install Python dependencies
         shell: bash
         run: |
-          set -euo pipefail
           source /opt/dtk/env.sh
           mkdir -p ~/.pip
           cat > ~/.pip/pip.conf << EOF
@@ -76,8 +80,8 @@ jobs:
           cd "${GITHUB_WORKSPACE}"
           pip3 install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn
           pip install "torch==${TORCH_VERSION}"
-          bash scripts/install_with_torch.sh torchvision ${TORCH_VERSION}
-          bash scripts/install_with_torch.sh triton ${TORCH_VERSION}
+          bash .github/scripts/install_with_torch.sh torchvision ${TORCH_VERSION}
+          bash .github/scripts/install_with_torch.sh triton ${TORCH_VERSION}
           pip install numpy==1.24.3 pytest wheel cloudpickle expecttest
           pip install auditwheel patchelf==0.17.2.4
           mkdir -p "${REPORTS_DIR}"
@@ -85,21 +89,18 @@ jobs:
       - name: Build wheel
         shell: bash
         run: |
-          set -euo pipefail
-          bash scripts/compile.sh > compile.log 2>&1
+          bash .github/scripts/compile.sh > compile.log 2>&1
           tail -n 100 compile.log
 
       - name: Repair manylinux wheel
         shell: bash
         run: |
-          set -euo pipefail
           source /opt/dtk/env.sh
-          bash scripts/repair_manylinux.sh
+          bash .github/scripts/repair_manylinux.sh
 
       - name: Install and verify wheel
         shell: bash
         run: |
-          set -euo pipefail
           source /opt/dtk/env.sh
           pip uninstall -y apex || true
           ls dist/*manylinux*.whl
@@ -114,11 +115,11 @@ jobs:
           export WORK_SPACE="${GITHUB_WORKSPACE}"
 
           set +e
-          bash scripts/test.sh
+          bash .github/scripts/test.sh
           test_exit=$?
           set -e
 
-          python3 scripts/parse_apex_log_to_junit.py "${LOG}" -o "${REPORTS_DIR}/apex_test_junit.xml" || true
+          python3 .github/scripts/parse_apex_log_to_junit.py "${LOG}" -o "${REPORTS_DIR}/apex_test_junit.xml" || true
           exit "${test_exit}"
 
       - name: Upload wheel and test reports
@@ -133,3 +134,10 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
+      - name: Publish unit test report
+        if: always()
+        uses: dorny/test-reporter@v2
+        with:
+          name: Apex unit tests
+          path: reports/apex_test_junit.xml
+          reporter: java-junit
