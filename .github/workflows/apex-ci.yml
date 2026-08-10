@@ -67,6 +67,12 @@ jobs:
         run: |
           set -euo pipefail
           source /opt/dtk/env.sh
+          mkdir -p ~/.pip
+          cat > ~/.pip/pip.conf << EOF
+          [global]
+          index-url = http://10.16.1.201:9929/nightly/dtk2604/+simple/
+          trusted-host = 10.16.1.201
+          EOF
           cd "${GITHUB_WORKSPACE}"
           pip3 install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn
           pip install "torch==${TORCH_VERSION}"
@@ -161,7 +167,6 @@ jobs:
           cd /opt
           wget http://112.11.77.146:65182/jenkins/rocm/26.04/intel/centos8/DTK-26.04-rc4-centos8-x86_64.tar.gz
           tar -xzf DTK-26.04-rc4-centos8-x86_64.tar.gz
-          tar -xzf "$(basename "${DTK_PKG}")"
           mv dtk-* dtk
 
           src_dir="/ArchivedFile/ai_cc/nightly"
@@ -181,6 +186,12 @@ jobs:
         run: |
           set -euo pipefail
           source /opt/dtk/env.sh
+          mkdir -p ~/.pip
+          cat > ~/.pip/pip.conf << EOF
+          [global]
+          index-url = http://10.16.1.201:9929/nightly/dtk2604/+simple/
+          trusted-host = 10.16.1.201
+          EOF
           cd "${GITHUB_WORKSPACE}"
           pip3 install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn
           bash scripts/install_with_torch.sh "torch==${TORCH_VERSION}"
