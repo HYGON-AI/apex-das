@@ -34,7 +34,6 @@ jobs:
         - /opt/hyhal/:/opt/hyhal/:ro
       options: >-
         --shm-size=16g
-        --network=host
         --device=/dev/kfd
         --device=/dev/dri/
         --group-add=video
@@ -145,7 +144,6 @@ jobs:
         - /opt/hyhal/:/opt/hyhal/:ro
       options: >-
         --shm-size=16g
-        --network=host
         --device=/dev/kfd
         --device=/dev/dri/
         --group-add=video
