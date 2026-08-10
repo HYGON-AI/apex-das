@@ -47,7 +47,7 @@ jobs:
 
           cd /opt
           wget http://112.11.77.146:65182/jenkins/rocm/26.04/intel/centos8/DTK-26.04-rc4-centos8-x86_64.tar.gz
-          tar -xzf DTK-26.04-Rocky8.6-x86_64.tar.gz
+          tar -xzf DTK-26.04-rc4-centos8-x86_64.tar.gz
           mv dtk-* dtk
 
           src_dir="/ArchivedFile/ai_cc/nightly"
@@ -160,7 +160,7 @@ jobs:
 
           cd /opt
           wget http://112.11.77.146:65182/jenkins/rocm/26.04/intel/centos8/DTK-26.04-rc4-centos8-x86_64.tar.gz
-          tar -xzf DTK-26.04-Rocky8.6-x86_64.tar.gz
+          tar -xzf DTK-26.04-rc4-centos8-x86_64.tar.gz
           tar -xzf "$(basename "${DTK_PKG}")"
           mv dtk-* dtk
 
