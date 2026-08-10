@@ -3,10 +3,10 @@ name: Apex CI
 on:
   pull_request:
     branches:
-      - ci_test
+      - ci-test
   push:
     branches:
-      - ci_test
+      - ci-test
 
 permissions:
   contents: read
@@ -25,11 +25,6 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on:
       - self-hosted
-      - Linux
-      - X64
-      - hcu
-      - bw1000
-      - hcu-ci-pr
       - bw18
     timeout-minutes: 180
     container:
@@ -141,11 +136,6 @@ jobs:
     if: github.event_name == 'push'
     runs-on:
       - self-hosted
-      - Linux
-      - X64
-      - hcu
-      - bw1000
-      - hcu-ci-pr
       - bw18
     timeout-minutes: 180
     container:
