@@ -3,10 +3,7 @@ name: Apex CI
 on:
   pull_request:
     branches:
-      - ci-test
-  push:
-    branches:
-      - ci-test
+      - main
 
 concurrency:
   group: apex-ci-${{ github.ref }}
@@ -17,9 +14,9 @@ permissions:
   checks: write
 
 env:
-  PIP_INDEX_URL: "http://10.16.1.201:9929/nightly/dtk2604/+simple/"
-  PIP_TRUSTED_HOST: "10.16.1.201"
-  DEVPI_URL: "http://10.16.1.201:9929/"
+  PIP_INDEX_URL: ${{ vars.PIP_INDEX_URL }}
+  PIP_TRUSTED_HOST: ${{ vars.PIP_TRUSTED_HOST }}
+  DEVPI_URL: ${{ vars.DEVPI_URL }}
   DTK_PKG: "/ArchivedFile/dtk-pkg/dtk26.04/DTK-26.04-rc4-centos8-x86_64.tar.gz"
   TORCH_VERSION: "2.10.0"
   REPORTS_DIR: ${{ github.workspace }}/reports
@@ -27,13 +24,13 @@ env:
 jobs:
   build-and-test:
     name: Build and test wheel
-    if: github.event_name == 'push'
+    if: github.event_name == 'pull_request'
     runs-on:
       - self-hosted
       - bw18
     timeout-minutes: 180
     container:
-      image: image.sourcefind.cn:5000/dcu/admin/base/dev:rockylinux8.6-mpi5.0-gcc10.3-cmake3.29-py3.10-mkl2020.4.304
+      image: ${{ vars.IMAGE }}
       volumes:
         - /public/opendas/ArchivedFile:/ArchivedFile:ro
         - /public5:/public5:ro
