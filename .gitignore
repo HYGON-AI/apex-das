@@ -6,6 +6,7 @@ docs/build
 *~
 __pycache__
 .vscode
+.claude/
 
 # Copied from https://raw.githubusercontent.com/github/gitignore/master/Python.gitignore
 # Byte-compiled / optimized / DLL files

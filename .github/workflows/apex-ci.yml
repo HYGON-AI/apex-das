@@ -1,0 +1,140 @@
+name: Apex CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: apex-ci-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  checks: write
+
+env:
+  PIP_INDEX_URL: ${{ vars.PIP_INDEX_URL }}
+  PIP_TRUSTED_HOST: ${{ vars.PIP_TRUSTED_HOST }}
+  DEVPI_URL: ${{ vars.DEVPI_URL }}
+  DTK_PKG: "/ArchivedFile/dtk-pkg/dtk26.04/DTK-26.04-rc4-centos8-x86_64.tar.gz"
+  TORCH_VERSION: "2.10.0"
+  REPORTS_DIR: ${{ github.workspace }}/reports
+
+jobs:
+  build-and-test:
+    name: Build and test wheel
+    if: github.event_name == 'pull_request'
+    runs-on:
+      - self-hosted
+      - bw18
+    timeout-minutes: 180
+    container:
+      image: ${{ vars.IMAGE }}
+      volumes:
+        - /public/opendas/ArchivedFile:/ArchivedFile:ro
+        - /public5:/public5:ro
+        - /opt/hyhal/:/opt/hyhal/:ro
+      options: >-
+        --shm-size=16g
+        --device=/dev/kfd
+        --device=/dev/dri/
+        --group-add=video
+        --privileged
+    steps:
+      - name: Check out pull request merge commit
+        uses: actions/checkout@v4
+
+      - name: Install DTK and AICC
+        shell: bash
+        run: |
+          set -eu
+          cp -f ${DTK_PKG} /opt/
+          cd /opt && tar -xzf $(basename ${DTK_PKG}) && mv dtk-* dtk
+
+          src_dir="/ArchivedFile/ai_cc/nightly"
+          latest_run=$(cd "${src_dir}" && find . -maxdepth 1 -type f -name 'dtk_llvm_*.run' -printf '%f\n' | sed 's/\.run$//' | sort -t '_' -k4 -nr | head -n1)
+          if [[ -n "${latest_run}" ]]; then
+            cp "${src_dir}/${latest_run}.run" "${GITHUB_WORKSPACE}/"
+            cd "${GITHUB_WORKSPACE}"
+            chmod +x "${latest_run}.run"
+            printf 'y\n' | bash "${latest_run}.run"
+            echo "AICC installation completed"
+          else
+            echo "No AICC installer found; skipping installation"
+          fi
+
+      - name: Install Python dependencies
+        shell: bash
+        run: |
+          source /opt/dtk/env.sh
+          mkdir -p ~/.pip
+          cat > ~/.pip/pip.conf << EOF
+          [global]
+          index-url = http://10.16.1.201:9929/nightly/dtk2604/+simple/
+          trusted-host = 10.16.1.201
+          EOF
+          cd "${GITHUB_WORKSPACE}"
+          pip3 install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn
+          pip install "torch==${TORCH_VERSION}"
+          bash .github/scripts/install_with_torch.sh torchvision ${TORCH_VERSION}
+          bash .github/scripts/install_with_torch.sh triton ${TORCH_VERSION}
+          pip install numpy==1.24.3 pytest wheel cloudpickle expecttest
+          pip install auditwheel patchelf==0.17.2.4
+          mkdir -p "${REPORTS_DIR}"
+
+      - name: Build wheel
+        shell: bash
+        run: |
+          bash .github/scripts/compile.sh > compile.log 2>&1
+          tail -n 100 compile.log
+
+      - name: Repair manylinux wheel
+        shell: bash
+        run: |
+          source /opt/dtk/env.sh
+          bash .github/scripts/repair_manylinux.sh
+
+      - name: Install and verify wheel
+        shell: bash
+        run: |
+          source /opt/dtk/env.sh
+          pip uninstall -y apex || true
+          ls dist/*manylinux*.whl
+          pip install --no-deps --force-reinstall dist/*manylinux*.whl
+          python -c "import apex; print('apex loaded from:', apex.__file__)"
+
+      - name: Run tests
+        shell: bash
+        run: |
+          export LOG="${REPORTS_DIR}/apex_test.log"
+          export JUNIT_DIR="${REPORTS_DIR}"
+          export WORK_SPACE="${GITHUB_WORKSPACE}"
+
+          set +e
+          bash .github/scripts/test.sh
+          test_exit=$?
+          set -e
+
+          python3 .github/scripts/parse_apex_log_to_junit.py "${LOG}" -o "${REPORTS_DIR}/apex_test_junit.xml" || true
+          exit "${test_exit}"
+
+      - name: Upload wheel and test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apex-wheel-and-test-reports
+          path: |
+            dist/*.whl
+            reports/apex_test_junit.xml
+            reports/apex_test.log
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Publish unit test report
+        if: always()
+        uses: dorny/test-reporter@v2
+        with:
+          name: Apex unit tests
+          path: reports/apex_test_junit.xml
+          reporter: java-junit
