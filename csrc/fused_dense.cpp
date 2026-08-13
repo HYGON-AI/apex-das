@@ -1,3 +1,4 @@
+// Copyright (c) 2026 Hygon Information Technology Co., Ltd.
 // SPDX-License-Identifier: BSD-3-Clause
 // Derived from NVIDIA Apex and modified for DAS/HCU.
 
@@ -175,4 +176,3 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("linear_gelu_linear_forward", &linear_gelu_linear_forward, "linear gelu linear forward");
   m.def("linear_gelu_linear_backward", &linear_gelu_linear_backward, "linear gelu linear backward");
 }
-

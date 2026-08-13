@@ -1,3 +1,4 @@
+// Copyright (c) 2018, NVIDIA CORPORATION. All rights reserved.
 // SPDX-License-Identifier: BSD-3-Clause
 // Derived from NVIDIA Apex; see THIRD_PARTY_NOTICES.md.
 

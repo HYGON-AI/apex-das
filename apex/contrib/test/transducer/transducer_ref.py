@@ -1,3 +1,6 @@
+# Copyright (c) 2026 Hygon Information Technology Co., Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
+
 import torch
 import numpy as np
 import pdb
@@ -108,5 +111,4 @@ def transducer_joint_reference(f, g, h_grad, f_len, g_len, pack_output, relu, dr
         list_to_pack.append(h[b, :f_len[b], :g_len[b], :].reshape(-1, H))
     h_packed = torch.cat(list_to_pack)
     return h_packed, f.grad, g.grad
-
 

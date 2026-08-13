@@ -1,3 +1,4 @@
+// Copyright (c) 2026 Hygon Information Technology Co., Ltd.
 // SPDX-License-Identifier: BSD-3-Clause
 // Source provenance is documented in THIRD_PARTY_NOTICES.md.
 
@@ -233,4 +234,3 @@ REGISTER_FWD_LAUNCHER(65536, fp16, fp16, fp16, fp32, 8, 1, 4, 16);
 REGISTER_FWD_LAUNCHER(65536, fp16, fp32, fp16, fp32, 8, 1, 4, 16);
 REGISTER_FWD_LAUNCHER(65536, bf16, bf16, bf16, fp32, 8, 1, 4, 16);
 REGISTER_FWD_LAUNCHER(65536, bf16, fp32, bf16, fp32, 8, 1, 4, 16);
-

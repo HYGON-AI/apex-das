@@ -19,7 +19,7 @@
 
 /*!
  * Copyright (c) 2018 by Contributors
- * Modifications Copyright (c) 2025-2026 Hygon Information Technology Co., Ltd.
+ * Modifications Copyright (c) 2026 Hygon Information Technology Co., Ltd.
  * \file nhwc_batch_norm_kernel.h
  * \brief CUDA NHWC Batch Normalization code
  * \author Shankara Rao Thejaswi Nanditale, Dick Carter, Maxim Milakov, Evgeni Krimer

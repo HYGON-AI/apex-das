@@ -1,6 +1,4 @@
 #!/bin/bash -x
-# SPDX-License-Identifier: BSD-3-Clause
-# Source provenance is documented in THIRD_PARTY_NOTICES.md.
 set -e
 
 # To run the test on 2 gpus

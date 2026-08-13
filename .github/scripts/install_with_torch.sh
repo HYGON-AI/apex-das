@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright (c) 2026 Hygon Information Technology Co., Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
 # install_with_torch.sh - install a PyTorch ecosystem package matching a given torch version
 #
 # Usage:

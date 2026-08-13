@@ -1,3 +1,6 @@
+# Copyright (c) 2026 Hygon Information Technology Co., Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
+
 import torch
 from torch import nn
 from torch.autograd import Variable
@@ -551,4 +554,3 @@ class FP16_Optimizer(object):
         self.optimizer.param_groups = value
 
     param_groups = property(_get_param_groups, _set_param_groups)
-

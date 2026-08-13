@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) 2026 Hygon Information Technology Co., Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
 #add 2026-08-07
 source /opt/dtk/env.sh
 export HSA_FORCE_FINE_GRAIN_PCIE=1
@@ -22,4 +24,3 @@ echo "${SEP}" >> ${LOG}
 echo ">>> [5/5] apex/contrib/test/test_label_smoothing.py" >> ${LOG}
 cd ${WORK_SPACE}/apex/contrib/test/  && python test_label_smoothing.py >> ${LOG} 2>&1
 echo "apex test完成"
-

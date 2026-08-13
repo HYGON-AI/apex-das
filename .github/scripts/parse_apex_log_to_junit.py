@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2026 Hygon Information Technology Co., Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
 # -*- coding: utf-8 -*-
 """将 Apex 单测日志(apex_test.log)解析为 JUnit XML, 用于 GitLab CI 的 Test Report 界面。
 

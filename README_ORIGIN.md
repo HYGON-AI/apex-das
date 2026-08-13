@@ -1,6 +1,7 @@
 # Introduction
 
-This repository holds NVIDIA-maintained utilities to streamline mixed precision and distributed training in Pytorch.
+This repository holds ROCm variant of Nvidia's Apex: https://github.com/NVIDIA/apex. 
+The aim of Apex repository is to streamline mixed precision and distributed training in Pytorch.
 Some of the code here will be included in upstream Pytorch eventually.
 The intent of Apex is to make up-to-date utilities available to users as quickly as possible.
 
@@ -21,9 +22,9 @@ different flags to `amp.initialize`.
 
 [API Documentation](https://nvidia.github.io/apex/amp.html)
 
-[Comprehensive Imagenet example](https://github.com/NVIDIA/apex/tree/master/examples/imagenet)
+[Comprehensive Imagenet example](https://github.com/rocm/apex/tree/master/examples/imagenet)
 
-[DCGAN example coming soon...](https://github.com/NVIDIA/apex/tree/master/examples/dcgan)
+[DCGAN example coming soon...](https://github.com/rocm/apex/tree/master/examples/dcgan)
 
 [Moving to the new Amp API](https://nvidia.github.io/apex/amp.html#transition-guide-for-old-api-users) (for users of the deprecated "Amp" and "FP16_Optimizer" APIs)
 
@@ -35,11 +36,11 @@ optimized for NVIDIA's NCCL communication library.
 
 [API Documentation](https://nvidia.github.io/apex/parallel.html)
 
-[Python Source](https://github.com/NVIDIA/apex/tree/master/apex/parallel)
+[Python Source](https://github.com/rocm/apex/tree/master/apex/parallel)
 
-[Example/Walkthrough](https://github.com/NVIDIA/apex/tree/master/examples/simple/distributed)
+[Example/Walkthrough](https://github.com/rocm/apex/tree/master/examples/simple/distributed)
 
-The [Imagenet example](https://github.com/NVIDIA/apex/tree/master/examples/imagenet)
+The [Imagenet example](https://github.com/rocm/apex/tree/master/examples/imagenet)
 shows use of `apex.parallel.DistributedDataParallel` along with `apex.amp`.
 
 ### Synchronized Batch Normalization
@@ -99,21 +100,15 @@ Note that we recommend restoring the model using the same `opt_level`. Also note
 # Installation
 
 ## Containers
-NVIDIA PyTorch Containers are available on NGC: https://catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch.
-The containers come with all the custom extensions available at the moment. 
-
-See [the NGC documentation](https://docs.nvidia.com/deeplearning/frameworks/pytorch-release-notes/index.html) for details such as:
-- how to pull a container
-- how to run a pulled container
-- release notes
+ROCm pytorch containers are available from https://hub.docker.com/r/rocm/pytorch.
 
 ## From Source
 
-To install Apex from source, we recommend using the nightly Pytorch obtainable from https://github.com/pytorch/pytorch.
+To install Apex from source, we recommend using the nightly Pytorch obtainable from https://github.com/rocm/pytorch.
 
 The latest stable release obtainable from https://pytorch.org should also work.
 
-### Rocm
+## ROCm
 Apex on ROCm supports both python only build and extension build.
 Note: Pytorch version recommended is >=1.5 for extension build.
 
@@ -122,14 +117,21 @@ Note: Pytorch version recommended is >=1.5 for extension build.
 python setup.py install
 ```
 
-
+=======
 ### Supported Versions
-| ``APEX Version`` | ``APEX branch``  | ``Torch Version`` |
-| ------------- | ------------- | ------------- |
-| ``1.1.0`` | release/1.1.0 | ``2.1`` |
-| ``1.0.0`` | release/1.0.0 | ``2.0`` and older |
+| ``APEX Version`` | ``APEX branch`` | ``Torch Version`` |
+|------------------|-----------------|-------------------|
+| ``1.7.0``        | release/1.7.0   | ``2.7``           | 
+| ``1.6.0``        | release/1.6.0   | ``2.6``           | 
+| ``1.5.0``        | release/1.5.0   | ``2.5``           | 
+| ``1.4.0``        | release/1.4.0   | ``2.4``           | 
+| ``1.3.0``        | release/1.3.0   | ``2.3``           | 
+| ``1.2.0``        | release/1.2.0   | ``2.2``           | 
+| ``1.1.0``        | release/1.1.0   | ``2.1``           |
+| ``1.0.0``        | release/1.0.0   | ``2.0`` and older |
 
-The relation between APEX and ROCm PyTorch is maintained in file `related_commits` in ROCm PyTorch release branches in the following format. 
+
+The relation between APEX and ROCm PyTorch is maintained in file `related_commits` in [ROCm PyTorch release branches](https://github.com/ROCm/pytorch/branches/all?query=release) in the following format. 
 
 ```
 ubuntu|pytorch|apex|release/1.0.0|06c33eee43f7a22f3ed7d9c3e5be0ddd757dc345|https://github.com/ROCmSoftwarePlatform/apex
@@ -146,11 +148,18 @@ python setup.py install --cpp_ext --cuda_ext
 ```
 Note that using --cuda_ext flag to install Apex will also enable all the extensions supported on ROCm including "--distributed_adam", "--distributed_lamb", "--bnp", "--xentropy", "--deprecated_fused_adam", "--deprecated_fused_lamb", and "--fast_multihead_attn".
 
+### Enable hipblasLT on ROCm
+hipblasLT is supported only on mi300 (gfx942) only.  
+python setup.py automatically builds apex with hipblasLT support only if GPU device id is gfx942  
+To verify if hipblasLT support is enabled, check the build logs  
+INFO: IS_HIPBLASLT_SUPPORTED value is True  ==> indicates apex is built with hipblasLT support  
+INFO: IS_HIPBLASLT_SUPPORTED value is False  
+
 ### Linux
 For performance and full functionality, we recommend installing Apex with
 CUDA and C++ extensions via
 ```bash
-git clone https://github.com/NVIDIA/apex
+git clone https://github.com/rocm/apex
 cd apex
 # if pip >= 23.1 (ref: https://pip.pypa.io/en/stable/news/#v23-1) which supports multiple `--config-settings` with the same key...
 pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --config-settings "--build-option=--cpp_ext" --config-settings "--build-option=--cuda_ext" ./
@@ -174,3 +183,13 @@ A Python-only build omits:
 `pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" .` may work if you were able to build Pytorch from source
 on your system. A Python-only build via `pip install -v --no-cache-dir .` is more likely to work.  
 If you installed Pytorch in a Conda environment, make sure to install Apex in that same environment.
+
+
+# Release notes
+
+## release/1.7.0
+
+Unit test related
+- Include running transformer tests in L0/run_test.py
+- Fix transformer unit tests
+

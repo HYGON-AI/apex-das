@@ -2,8 +2,13 @@
 
 apex-das 是面向 DAS/HCU 平台和 DTK 软件栈适配的 PyTorch Apex 扩展库，提供混合精度训练、分布式训练和 HCU/HIP Kernel 融合优化能力。
 
-本项目基于 [ROCm/apex](https://github.com/ROCm/apex) 二次开发；
-ROCm Apex 源自 [NVIDIA/apex](https://github.com/NVIDIA/apex)。
+本项目基于 [ROCm/apex](https://github.com/ROCm/apex) 二次开发；ROCm Apex 源自 [NVIDIA/apex](https://github.com/NVIDIA/apex)。
+
+- 上游分支：`release/1.7.0`
+- 上游 Commit：`86fff107d5e73043c75003c1530dbeabce8984fb`
+- 上游许可证：`BSD-3-Clause`
+
+Modified by Hygon Information Technology Co., Ltd.
 本仓库包含由 Hygon Information Technology Co., Ltd. 完成的 DAS/HCU 平台适配与修改。
 
 ## 主要适配
@@ -56,5 +61,5 @@ python3 -m pip install dist/apex-*.whl
 
 仓库主许可证为 [BSD 3-Clause](LICENSE)。第三方组件继续适用其各自许可证和版权声明，详见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 与 [LICENSES](LICENSES/)。
 
-Copyright (c) 2025-2026 Hygon Information Technology Co. Ltd.
+Copyright (c) 2026 Hygon Information Technology Co., Ltd.
 Hygon 的版权声明仅适用于其新增或修改内容，不替代 ROCm、NVIDIA 或其他上游作者的版权声明。

@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Hygon Information Technology Co., Ltd.
  * SPDX-License-Identifier: BSD-3-Clause
  */
 

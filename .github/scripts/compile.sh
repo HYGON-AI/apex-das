@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) 2026 Hygon Information Technology Co., Ltd.
+# SPDX-License-Identifier: BSD-3-Clause
 set -e
 source /opt/dtk/env.sh
 apex_version=$(cat version.txt)
