@@ -187,10 +187,6 @@ def get_macros_and_flags():
             nvcc_flags = []
         else:
             define_macros += [("WITH_CUDA", None)]
-            if NVCC_FLAGS is None:
-                nvcc_flags = []
-            else:
-                nvcc_flags = nvcc_flags.split(" ")
 
     return define_macros
 

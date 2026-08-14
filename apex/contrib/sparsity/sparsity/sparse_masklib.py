@@ -1,4 +1,5 @@
 # Copyright (c) 2011-2022, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2026 Hygon Information Technology Co., Ltd.
 # SPDX-License-Identifier: BSD-3-Clause
 # Source provenance is documented in THIRD_PARTY_NOTICES.md.
 
@@ -149,6 +150,28 @@ def compute_valid_2d_patterns(m, n):
 
 
 """ m:n 2d structured pruning: exhaustive method to select best mask """
+
+
+def reshape_2d(matrix, block_rows, block_cols):
+    """Group a 2D matrix into flattened, non-overlapping blocks."""
+    rows, cols = matrix.shape
+    if rows % block_rows or cols % block_cols:
+        raise ValueError("matrix dimensions must be divisible by the block dimensions")
+    return (
+        matrix.reshape(rows // block_rows, block_rows, cols // block_cols, block_cols)
+        .permute(0, 2, 1, 3)
+        .reshape(rows // block_rows, cols // block_cols, block_rows * block_cols)
+    )
+
+
+def reshape_2d_inv(blocks):
+    """Restore a matrix from non-overlapping 2D blocks."""
+    block_grid_rows, block_grid_cols, block_rows, block_cols = blocks.shape
+    return (
+        blocks.permute(0, 2, 1, 3)
+        .contiguous()
+        .reshape(block_grid_rows * block_rows, block_grid_cols * block_cols)
+    )
 
 
 def mn_2d_best(matrix, m, n):

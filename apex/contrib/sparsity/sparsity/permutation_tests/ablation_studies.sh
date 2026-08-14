@@ -58,7 +58,8 @@ get_num_optimal() {
 populate_row() {
     local greedy=$1
     local escape=$2
-    local strategy=$(echo "$3" | sed 's/,/_/g')
+    local strategy
+    strategy=$(echo "$3" | sed 's/,/_/g')
     local OUTFILE=$4
 
     printf "$greedy,$escape," >> $OUTFILE

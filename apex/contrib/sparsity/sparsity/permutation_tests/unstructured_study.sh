@@ -66,7 +66,9 @@ done
 # log a single strategy in as a row in the table
 log_success () {
     strategy=$1
-    local -n _successes=$2
+    # _successes intentionally refers to the array named by the second argument.
+    # shellcheck disable=SC2178
+    local -n _successes="$2"
     OUTFILE=$3
 
     printf "$strategy," >> $OUTFILE

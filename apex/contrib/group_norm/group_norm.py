@@ -12,7 +12,11 @@ import os
 import torch
 import torch.nn.init as init
 import group_norm_cuda
-# import group_norm_v2_cuda
+
+try:
+    import group_norm_v2_cuda
+except ImportError:
+    group_norm_v2_cuda = None
 
 from torch import Tensor
 from torch.nn.parameter import Parameter
@@ -72,6 +76,8 @@ def group_norm_nhwc_fprop(
 
     # enqueue fprop kernel
     if use_group_norm_v2:
+        if group_norm_v2_cuda is None:
+            raise RuntimeError("GroupNorm v2 support was not built")
         sums = torch.empty(x.shape[0] * G * 2, device=x.device)
         y = group_norm_v2_cuda.gn(
             x, weight, bias, eps, with_swish, G, mean_var_out=sums, sm_margin=sm_margin
@@ -130,6 +136,8 @@ def group_norm_nhwc_bprop(
     sm_margin = int(os.environ.get("APEX_GROUP_NORM_BPROP_SM_MARGIN", "0"))
 
     if use_group_norm_v2:
+        if group_norm_v2_cuda is None:
+            raise RuntimeError("GroupNorm v2 support was not built")
         dx, dw, db = group_norm_v2_cuda.gn_bwd(
             grad_output, x, weight, bias, sums, eps, with_swish, G, sm_margin=sm_margin
         )

@@ -1,4 +1,5 @@
 # Copyright (c) 2011-2022, NVIDIA CORPORATION.  All rights reserved.
+# Copyright (c) 2026 Hygon Information Technology Co., Ltd.
 # SPDX-License-Identifier: BSD-3-Clause
 # Source provenance is documented in THIRD_PARTY_NOTICES.md.
 
@@ -166,7 +167,7 @@ class ASP:
 
         for module_type in whitelist:
             assert module_type in sparse_parameter_list, (
-                "Module %s :: Don't know how to sparsify module." % module.dtype()
+                "Module %s :: Don't know how to sparsify module." % module_type
             )
 
         # find all sparse modules, extract sparse parameters and decorate
