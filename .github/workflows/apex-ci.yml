@@ -26,8 +26,8 @@ jobs:
     name: Build and test wheel
     if: github.event_name == 'pull_request'
     runs-on:
-      - self-hosted
-      - bw18
+      group: ci-general
+      labels: [bw1100]
     timeout-minutes: 180
     container:
       image: ${{ vars.IMAGE }}
@@ -80,7 +80,7 @@ jobs:
           bash .github/scripts/install_with_torch.sh torchvision ${TORCH_VERSION}
           bash .github/scripts/install_with_torch.sh triton ${TORCH_VERSION}
           pip install numpy==1.24.3 pytest wheel cloudpickle expecttest
-          pip install auditwheel patchelf==0.17.2.4
+          pip install auditwheel patchelf==0.17.2.4 ciupload
           mkdir -p "${REPORTS_DIR}"
 
       - name: Build wheel
@@ -102,6 +102,7 @@ jobs:
           pip uninstall -y apex || true
           ls dist/*manylinux*.whl
           pip install --no-deps --force-reinstall dist/*manylinux*.whl
+          
           python -c "import apex; print('apex loaded from:', apex.__file__)"
 
       - name: Run tests
@@ -115,7 +116,6 @@ jobs:
           bash .github/scripts/test.sh
           test_exit=$?
           set -e
-
           python3 .github/scripts/parse_apex_log_to_junit.py "${LOG}" -o "${REPORTS_DIR}/apex_test_junit.xml" || true
           exit "${test_exit}"
 
