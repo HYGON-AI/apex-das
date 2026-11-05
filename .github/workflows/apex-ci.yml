@@ -71,8 +71,8 @@ jobs:
           mkdir -p ~/.pip
           cat > ~/.pip/pip.conf << EOF
           [global]
-          index-url = http://10.16.1.201:9929/nightly/dtk2604/+simple/
-          trusted-host = 10.16.1.201
+          index-url = ${DEVPI_URL}/nightly/dtk2604/+simple/
+          trusted-host = ${PIP_TRUSTED_HOST}
           EOF
           cd "${GITHUB_WORKSPACE}"
           pip3 install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn
