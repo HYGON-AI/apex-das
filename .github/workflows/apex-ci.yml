@@ -1,13 +1,29 @@
 name: Apex CI
 
 on:
-  pull_request:
+  pull_request_target:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      torch-version:
+        description: 'Torch version to test'
+        required: false
+        default: ''
+      image:
+        description: 'Image to build'
+        required: false
+        default: ''
+      pr-number:
+        description: 'PR number to merge and test (workflow_dispatch only)'
+        required: false
+        default: ''
+
 
 concurrency:
-  group: apex-ci-${{ github.ref }}
-  cancel-in-progress: false
+  # A new PR commit supersedes the old validation run of the same PR; manual runs never cancel each other.
+  group: pr-test-hcu-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -17,63 +33,49 @@ env:
   PIP_INDEX_URL: ${{ vars.PIP_INDEX_URL }}
   PIP_TRUSTED_HOST: ${{ vars.PIP_TRUSTED_HOST }}
   DEVPI_URL: ${{ vars.DEVPI_URL }}
-  DTK_PKG: "/ArchivedFile/dtk-pkg/dtk26.04/DTK-26.04-rc4-centos8-x86_64.tar.gz"
-  TORCH_VERSION: "2.10.0"
+  TORCH_VERSION: ${{ inputs.torch-version || '2.13.0' }}
   REPORTS_DIR: ${{ github.workspace }}/reports
 
 jobs:
-  build-and-test:
-    name: Build and test wheel
-    if: github.event_name == 'pull_request'
-    runs-on:
-      group: ci-general
-      labels: [bw1100]
+  build:
+    name: Build wheel
+    runs-on: hygon-build
     timeout-minutes: 180
     container:
-      image: ${{ vars.IMAGE }}
-      volumes:
-        - /public/opendas/ArchivedFile:/ArchivedFile:ro
-        - /public5:/public5:ro
-        - /opt/hyhal/:/opt/hyhal/:ro
-      options: >-
-        --shm-size=16g
-        --device=/dev/kfd
-        --device=/dev/dri/
-        --group-add=video
-        --privileged
+      image: ${{ inputs.image || vars.IMAGE }}
     steps:
-      - name: Check out pull request merge commit
+      - name: Checkout base branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref || github.ref }}
+          fetch-depth: 0
+          # Keep the token out of .git/config so PR code cannot read it.
+          persist-credentials: false
+
+      - name: Merge PR into base
+        if: github.event_name == 'pull_request_target' || inputs.pr-number != ''
+        env:
+          # Pass via env instead of inline ${{ }} so a manual input cannot inject shell commands.
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr-number }}
+          # The repo is private, so the fetch needs a token; pass it only to this one command so it never lands in .git/config.
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          auth=$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 -w0)
+          git -c http.extraheader="AUTHORIZATION: basic ${auth}" \
+                  fetch "https://github.com/${GITHUB_REPOSITORY}.git" "pull/${PR_NUMBER}/head:pr"
+          git merge --no-ff --no-edit pr
 
       - name: Install DTK and AICC
         shell: bash
         run: |
-          set -eu
-          cp -f ${DTK_PKG} /opt/
-          cd /opt && tar -xzf $(basename ${DTK_PKG}) && mv dtk-* dtk
-
-          src_dir="/ArchivedFile/ai_cc/nightly"
-          latest_run=$(cd "${src_dir}" && find . -maxdepth 1 -type f -name 'dtk_llvm_*.run' -printf '%f\n' | sed 's/\.run$//' | sort -t '_' -k4 -nr | head -n1)
-          if [[ -n "${latest_run}" ]]; then
-            cp "${src_dir}/${latest_run}.run" "${GITHUB_WORKSPACE}/"
-            cd "${GITHUB_WORKSPACE}"
-            chmod +x "${latest_run}.run"
-            printf 'y\n' | bash "${latest_run}.run"
-            echo "AICC installation completed"
-          else
-            echo "No AICC installer found; skipping installation"
-          fi
+          bash .github/scripts/hcu_llvm_installer.sh
 
       - name: Install Python dependencies
         shell: bash
         run: |
           source /opt/dtk/env.sh
-          mkdir -p ~/.pip
-          cat > ~/.pip/pip.conf << EOF
-          [global]
-          index-url = http://10.16.1.201:9929/nightly/dtk2604/+simple/
-          trusted-host = 10.16.1.201
-          EOF
           cd "${GITHUB_WORKSPACE}"
           pip3 install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn
           pip install "torch==${TORCH_VERSION}"
@@ -81,7 +83,6 @@ jobs:
           bash .github/scripts/install_with_torch.sh triton ${TORCH_VERSION}
           pip install numpy==1.24.3 pytest wheel cloudpickle expecttest
           pip install auditwheel patchelf==0.17.2.4 ciupload
-          mkdir -p "${REPORTS_DIR}"
 
       - name: Build wheel
         shell: bash
@@ -102,7 +103,86 @@ jobs:
           pip uninstall -y apex || true
           ls dist/*manylinux*.whl
           pip install --no-deps --force-reinstall dist/*manylinux*.whl
-          
+
+          python -c "import apex; print('apex loaded from:', apex.__file__)"
+
+      - name: Upload manylinux wheel
+        uses: actions/upload-artifact@v4
+        with:
+          name: apex-manylinux-wheel
+          path: dist/*manylinux*.whl
+          if-no-files-found: error
+          retention-days: 30
+
+  test:
+    name: Test wheel (hygon-bw1100-4card)
+    needs: build
+    runs-on: hygon-bw1100-4card
+    timeout-minutes: 180
+    container:
+      image: ${{ inputs.image || vars.IMAGE }}
+    steps:
+      - name: Checkout base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref || github.ref }}
+          fetch-depth: 0
+          # Keep the token out of .git/config so PR code cannot read it.
+          persist-credentials: false
+
+      # ${{ github.workspace }} resolves to the host path in container jobs, so derive it inside the container.
+      - name: Set workspace and reports directory
+        run: |
+          echo "WORK_SPACE=${GITHUB_WORKSPACE}" >> "$GITHUB_ENV"
+          echo "REPORTS_DIR=${GITHUB_WORKSPACE}/reports" >> "$GITHUB_ENV"
+
+      - name: Merge PR into base
+        if: github.event_name == 'pull_request_target' || inputs.pr-number != ''
+        env:
+          # Pass via env instead of inline ${{ }} so a manual input cannot inject shell commands.
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr-number }}
+          # The repo is private, so the fetch needs a token; pass it only to this one command so it never lands in .git/config.
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          auth=$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 -w0)
+          git -c http.extraheader="AUTHORIZATION: basic ${auth}" \
+                  fetch "https://github.com/${GITHUB_REPOSITORY}.git" "pull/${PR_NUMBER}/head:pr"
+          git merge --no-ff --no-edit pr
+
+      - name: Install DTK and AICC
+        shell: bash
+        run: |
+          bash .github/scripts/hcu_llvm_installer.sh
+
+      - name: Install Python dependencies
+        shell: bash
+        run: |
+          source /opt/dtk/env.sh
+          cd "${GITHUB_WORKSPACE}"
+          pip3 install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple --trusted-host pypi.tuna.tsinghua.edu.cn
+          pip install "torch==${TORCH_VERSION}"
+          bash .github/scripts/install_with_torch.sh torchvision ${TORCH_VERSION}
+          bash .github/scripts/install_with_torch.sh triton ${TORCH_VERSION}
+          pip install numpy==1.24.3 pytest wheel cloudpickle expecttest
+          mkdir -p "${REPORTS_DIR}"
+
+      # The wheel built by the `build` job; the 4-card runner installs exactly that artifact.
+      - name: Download wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: apex-manylinux-wheel
+          path: dist
+
+      - name: Install and verify wheel
+        shell: bash
+        run: |
+          source /opt/dtk/env.sh
+          pip uninstall -y apex || true
+          ls dist/*manylinux*.whl
+          pip install --no-deps --force-reinstall dist/*manylinux*.whl
+
           python -c "import apex; print('apex loaded from:', apex.__file__)"
 
       - name: Run tests
@@ -119,13 +199,12 @@ jobs:
           python3 .github/scripts/parse_apex_log_to_junit.py "${LOG}" -o "${REPORTS_DIR}/apex_test_junit.xml" || true
           exit "${test_exit}"
 
-      - name: Upload wheel and test reports
+      - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: apex-wheel-and-test-reports
+          name: apex-test-reports-4card
           path: |
-            dist/*.whl
             reports/apex_test_junit.xml
             reports/apex_test.log
           if-no-files-found: warn
@@ -135,6 +214,6 @@ jobs:
         if: always()
         uses: dorny/test-reporter@v2
         with:
-          name: Apex unit tests
+          name: Apex unit tests (hygon-bw1100-4card)
           path: reports/apex_test_junit.xml
           reporter: java-junit
