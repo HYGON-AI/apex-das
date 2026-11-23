@@ -4,6 +4,7 @@ on:
   pull_request_target:
     branches:
       - main
+    types: [labeled]
   workflow_dispatch:
     inputs:
       torch-version:
@@ -39,6 +40,8 @@ env:
 jobs:
   build:
     name: Build wheel
+    if: (github.event_name != 'pull_request_target' ||
+        github.event.label.name == 'run-ci')
     runs-on: hygon-build
     timeout-minutes: 180
     container:
