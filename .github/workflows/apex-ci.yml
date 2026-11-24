@@ -84,7 +84,7 @@ jobs:
           pip install "torch==${TORCH_VERSION}"
           bash .github/scripts/install_with_torch.sh torchvision ${TORCH_VERSION}
           bash .github/scripts/install_with_torch.sh triton ${TORCH_VERSION}
-          pip install numpy==1.24.3 pytest wheel cloudpickle expecttest
+          pip install numpy==2.1.0 pytest wheel cloudpickle expecttest
           pip install auditwheel patchelf==0.17.2.4 ciupload
 
       - name: Build wheel
@@ -168,7 +168,7 @@ jobs:
           pip install "torch==${TORCH_VERSION}"
           bash .github/scripts/install_with_torch.sh torchvision ${TORCH_VERSION}
           bash .github/scripts/install_with_torch.sh triton ${TORCH_VERSION}
-          pip install numpy==1.24.3 pytest wheel cloudpickle expecttest
+          pip install numpy==2.1.0 pytest wheel cloudpickle expecttest
           mkdir -p "${REPORTS_DIR}"
 
       # The wheel built by the `build` job; the 4-card runner installs exactly that artifact.
